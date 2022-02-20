@@ -49,7 +49,7 @@
 <script>
 const MAX_GEOHASH_LENGTH = 7;
 
-var map = L.map('map').setView([40, 4], 10);
+var map = L.map('map').setView([0, 0], 2);
 L.tileLayer('https://{s}.tile.osm.org/{z}/{x}/{y}.png').addTo(map);
 
 var geojsonLayer;
@@ -109,13 +109,13 @@ function clickFeature(e) {
     if (geohash.length >= MAX_GEOHASH_LENGTH) {
         getNominatimInfo(geohash);
     } else {
-        zoomIn(geohash);
+        zoomIn(e);
     }
 }
 
 function getNominatimInfo(geohash) {
     var decoded_gh = Geohash.decode(geohash);
-    const url = `https://nominatim.openstreetmap.org/reverse.php?format=json&lat=${decoded_gh.lat}&lon=${decoded_gh.lon}&zoom=10&addressdetails=1`;
+    const url = `https://nominatim.openstreetmap.org/reverse.php?format=json&lat=${decoded_gh.lat}&lon=${decoded_gh.lon}&zoom=14&addressdetails=1`;
     
     fetch(url)
         .then(response => response.json())
@@ -123,10 +123,15 @@ function getNominatimInfo(geohash) {
         .catch(error => console.log(error));
 }
 
-function zoomIn(geohash) {
+function zoomIn(e) {
+    var geohash = e.target.feature.properties.geohash;
+    
+    map.fitBounds(e.target.getBounds(), {
+        padding: [200, 200]
+    });
+    
     map.removeLayer(geojsonLayer);
     start(geohash);
-    map.fitBounds(geojsonLayer.getBounds());
 }
 
 
@@ -183,12 +188,13 @@ function getMapBounds(map) {
 
 
 
-
+/*
 map.on('moveend', function(e) {
     var map = e.target;
-    //getMapZoom(map);
+    getMapZoom(map);
     //getMapBounds(map);
 });
+*/
 
 </script>
 

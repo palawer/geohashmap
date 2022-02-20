@@ -9,7 +9,6 @@ const base32 = '0123456789bcdefghjkmnpqrstuvwxyz'; // (geohash-specific) Base32 
  * Geohash: Gustavo Niemeyer’s geocoding system.
  */
 class Geohash {
-
     /**
      * Encodes latitude/longitude to geohash, either to specified precision or to automatically
      * evaluated precision.
@@ -34,21 +33,21 @@ class Geohash {
             }
             precision = 12; // set to maximum
         }
-
+        
         lat = Number(lat);
         lon = Number(lon);
         precision = Number(precision);
-
+        
         if (isNaN(lat) || isNaN(lon) || isNaN(precision)) throw new Error('Invalid geohash');
-
+        
         let idx = 0; // index into base32 map
         let bit = 0; // each char holds 5 bits
         let evenBit = true;
         let geohash = '';
-
+        
         let latMin =  -90, latMax =  90;
         let lonMin = -180, lonMax = 180;
-
+        
         while (geohash.length < precision) {
             if (evenBit) {
                 // bisect E-W longitude
@@ -72,7 +71,7 @@ class Geohash {
                 }
             }
             evenBit = !evenBit;
-
+            
             if (++bit == 5) {
                 // 5 bits gives us a character: append it and start over
                 geohash += base32.charAt(idx);
@@ -80,11 +79,10 @@ class Geohash {
                 idx = 0;
             }
         }
-
+        
         return geohash;
     }
-
-
+    
     /**
      * Decode geohash to latitude/longitude (location is approximate centre of geohash cell,
      *     to reasonable precision).
@@ -97,25 +95,23 @@ class Geohash {
      *     const latlon = Geohash.decode('u120fxw'); // => { lat: 52.205, lon: 0.1188 }
      */
     static decode(geohash) {
-
         const bounds = Geohash.bounds(geohash); // <-- the hard work
         // now just determine the centre of the cell...
-
+        
         const latMin = bounds.sw.lat, lonMin = bounds.sw.lon;
         const latMax = bounds.ne.lat, lonMax = bounds.ne.lon;
-
+        
         // cell centre
         let lat = (latMin + latMax)/2;
         let lon = (lonMin + lonMax)/2;
-
+        
         // round to close to centre without excessive precision: ⌊2-log10(Δ°)⌋ decimal places
         lat = lat.toFixed(Math.floor(2-Math.log(latMax-latMin)/Math.LN10));
         lon = lon.toFixed(Math.floor(2-Math.log(lonMax-lonMin)/Math.LN10));
-
+        
         return { lat: Number(lat), lon: Number(lon) };
     }
-
-
+    
     /**
      * Returns SW/NE latitude/longitude bounds of specified geohash.
      *
@@ -125,18 +121,18 @@ class Geohash {
      */
     static bounds(geohash) {
         if (geohash.length == 0) throw new Error('Invalid geohash');
-
+        
         geohash = geohash.toLowerCase();
-
+        
         let evenBit = true;
         let latMin =  -90, latMax =  90;
         let lonMin = -180, lonMax = 180;
-
+        
         for (let i=0; i<geohash.length; i++) {
             const chr = geohash.charAt(i);
             const idx = base32.indexOf(chr);
             if (idx == -1) throw new Error('Invalid geohash');
-
+            
             for (let n=4; n>=0; n--) {
                 const bitN = idx >> n & 1;
                 if (evenBit) {
@@ -159,16 +155,15 @@ class Geohash {
                 evenBit = !evenBit;
             }
         }
-
+        
         const bounds = {
             sw: { lat: latMin, lon: lonMin },
             ne: { lat: latMax, lon: lonMax },
         };
-
+        
         return bounds;
     }
-
-
+    
     /**
      * Determines adjacent cell in given direction.
      *
@@ -179,13 +174,12 @@ class Geohash {
      */
     static adjacent(geohash, direction) {
         // based on github.com/davetroy/geohash-js
-
         geohash = geohash.toLowerCase();
         direction = direction.toLowerCase();
-
+        
         if (geohash.length == 0) throw new Error('Invalid geohash');
         if ('nsew'.indexOf(direction) == -1) throw new Error('Invalid direction');
-
+        
         const neighbour = {
             n: [ 'p0r21436x8zb9dcf5h7kjnmqesgutwvy', 'bc01fg45238967deuvhjyznpkmstqrwx' ],
             s: [ '14365h7k9dcfesgujnmqp0r2twvyx8zb', '238967debc01fg45kmstqrwxuvhjyznp' ],
@@ -198,22 +192,21 @@ class Geohash {
             e: [ 'bcfguvyz', 'prxz'     ],
             w: [ '0145hjnp', '028b'     ],
         };
-
+        
         const lastCh = geohash.slice(-1);    // last character of hash
         let parent = geohash.slice(0, -1); // hash without last character
-
+        
         const type = geohash.length % 2;
-
+        
         // check for edge-cases which don't share common prefix
         if (border[direction][type].indexOf(lastCh) != -1 && parent != '') {
             parent = Geohash.adjacent(parent, direction);
         }
-
+        
         // append letter for direction to parent
         return parent + base32.charAt(neighbour[direction][type].indexOf(lastCh));
     }
-
-
+    
     /**
      * Returns all 8 adjacent cells to specified geohash.
      *
@@ -233,9 +226,4 @@ class Geohash {
             'nw': Geohash.adjacent(Geohash.adjacent(geohash, 'n'), 'w'),
         };
     }
-
 }
-
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
-
-//export default Geohash;

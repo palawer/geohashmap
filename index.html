@@ -1,8 +1,10 @@
 <html>
 <head>
+    <title>Geohash Map</title>
     <link rel="stylesheet" href="leaflet/leaflet.css" />
     <script src="leaflet/leaflet.js"></script>
     <script src="geohash.js"></script>
+    <script src="utils.js"></script>
     <style>
     html, body {
         margin: 0;
@@ -11,84 +13,73 @@
         height: 100%;
     }
     #map {
-        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 300px;
+    }
+    #sidebar {
+        position: absolute;
+        top: 0;
+        width: 300px;
+        bottom: 0;
+        right: 0;
+        background: #EEE;
+    }
+    .info {
+        padding: 6px 8px;
+        font: 14px/16px Arial, Helvetica, sans-serif;
+        background: white;
+        background: rgba(255,255,255,0.8);
+        box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        border-radius: 5px;
+    }
+    .info h4 {
+        margin: 0 0 5px;
+        color: #777;
     }
     </style>
 </head>
 <body>
 
 <div id="map"></div>
+<div id="sidebar">sidebar</div>
 
 <script>
-function geohashToPolygon(bounds) {
-    polygon = {
-        'type': 'Polygon',
-        'coordinates': [[
-            [bounds.sw.lon, bounds.sw.lat],
-            [bounds.ne.lon, bounds.sw.lat],
-            [bounds.ne.lon, bounds.ne.lat],
-            [bounds.sw.lon, bounds.ne.lat],
-            [bounds.sw.lon, bounds.sw.lat],
-        ]]
-    };
-    return polygon;
-}
+const MAX_GEOHASH_LENGTH = 7;
 
 var map = L.map('map').setView([40, 4], 10);
 L.tileLayer('https://{s}.tile.osm.org/{z}/{x}/{y}.png').addTo(map);
 
-var gh = Geohash.encode(40, 4, 5);
-var neighbours = Geohash.neighbours(gh);
-var geohashes = [gh];
-var polygons = [];
-var features = [];
-var geojson;
+var geojsonLayer;
 
-for (var key in neighbours) {
-    var g = neighbours[key];
-    geohashes.push(g);
+start();
+
+function start(currentGeohash) {
+    var geohashes = generateGeohashes(currentGeohash);
+    var featureCollection = generateGeojson(geohashes);
+    geojsonLayer = loadGeojsonData(featureCollection);
 }
 
-for (var i=0; i<geohashes.length; i++) {
-    var gh = geohashes[i];
-    var bounds = Geohash.bounds(gh);
-    var polygon = geohashToPolygon(bounds);
-    polygons.push(polygon);
-}
 
-for (var i=0; i<polygons.length; i++) {
-    var polygon = polygons[i];
-    features.push({
-        "type": "Feature",
-        "properties": {},
-        "geometry": polygon
-    });
-}
 
-var geojson_file = {
-    "type": "FeatureCollection",
-    "features": features
-};
 
-var geojsonStyle = {
-    "color": "#ff7800",
-    "weight": 1,
-    "opacity": 0.65
-};
+
 
 function style(feature) {
     return {
         "color": "#ff7800",
         "weight": 1,
-        "opacity": 0.65
+        "opacity": 1
     };
 }
 
 function onEachFeature(feature, layer) {
     layer.on({
-        mouseover: highlightFeature,
-        mouseout: resetHighlight,
-        click: zoomToFeature
+        mouseover : highlightFeature,
+        mouseout  : resetHighlight,
+        click     : clickFeature
     });
 }
 
@@ -103,23 +94,101 @@ function highlightFeature(e) {
     if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
         layer.bringToFront();
     }
+    
+    info.update(layer.feature.properties);
 }
 
 function resetHighlight(e) {
-    geojson.resetStyle(e.target);
+    geojsonLayer.resetStyle(e.target);
+    info.update();
 }
 
-function zoomToFeature(e) {
-    console.log(e);
-    //map.fitBounds(e.target.getBounds());
+function clickFeature(e) {
+    var geohash = e.target.feature.properties.geohash;
+    
+    if (geohash.length >= MAX_GEOHASH_LENGTH) {
+        getNominatimInfo(geohash);
+    } else {
+        zoomIn(geohash);
+    }
+}
+
+function getNominatimInfo(geohash) {
+    var decoded_gh = Geohash.decode(geohash);
+    const url = `https://nominatim.openstreetmap.org/reverse.php?format=json&lat=${decoded_gh.lat}&lon=${decoded_gh.lon}&zoom=10&addressdetails=1`;
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => console.log(data.address))
+        .catch(error => console.log(error));
+}
+
+function zoomIn(geohash) {
+    map.removeLayer(geojsonLayer);
+    start(geohash);
+    map.fitBounds(geojsonLayer.getBounds());
 }
 
 
-
-geojson = L.geoJSON(geojson_file, {
-    style         : style,
-    onEachFeature : onEachFeature
+/*
+// add world countries
+fetch('./data/world_countries_v7.geojson')
+  .then(response => response.json())
+  .then(data => {
+      L.geoJSON(data, {
 }).addTo(map);
+  })
+  .catch(error => console.log(error));
+*/
+
+function loadGeojsonData(featureCollection) {
+    var geojsonLayer = L.geoJSON(featureCollection, {
+        style         : style,
+        onEachFeature : onEachFeature
+    }).addTo(map);
+    
+    return geojsonLayer;
+}
+
+
+
+
+
+var info = L.control();
+
+info.onAdd = function (map) {
+    this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
+    this.update();
+    return this._div;
+};
+
+// method that we will use to update the control based on feature properties passed
+info.update = function (properties) {
+    this._div.innerHTML = '<h4>US Population Density</h4>' +  (properties ?
+        '<b>' + properties.geohash + '</b>'
+        : 'Hover over a geohash');
+};
+
+info.addTo(map);
+
+function getMapZoom(map) {
+    const zoom = map.getZoom();
+    console.log(zoom);
+}
+
+function getMapBounds(map) {
+    const bounds = map.getBounds();
+    console.log(bounds);
+}
+
+
+
+
+map.on('moveend', function(e) {
+    var map = e.target;
+    //getMapZoom(map);
+    //getMapBounds(map);
+});
 
 </script>
 

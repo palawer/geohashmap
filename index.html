@@ -17,8 +17,10 @@
         top: 0;
         left: 0;
         bottom: 0;
-        right: 300px;
+        /*right: 300px;*/
+        right: 0;
     }
+    /*
     #sidebar {
         position: absolute;
         top: 0;
@@ -27,6 +29,7 @@
         right: 0;
         background: #EEE;
     }
+    */
     .info {
         padding: 6px 8px;
         font: 14px/16px Arial, Helvetica, sans-serif;
@@ -44,7 +47,6 @@
 <body>
 
 <div id="map"></div>
-<div id="sidebar">sidebar</div>
 
 <script>
 const MAX_GEOHASH_LENGTH = 7;
@@ -169,13 +171,14 @@ info.onAdd = function (map) {
 
 // method that we will use to update the control based on feature properties passed
 info.update = function (properties) {
-    this._div.innerHTML = '<h4>US Population Density</h4>' +  (properties ?
+    this._div.innerHTML = '<h4>Geohash</h4>' +  (properties ?
         '<b>' + properties.geohash + '</b>'
         : 'Hover over a geohash');
 };
 
 info.addTo(map);
 
+/*
 function getMapZoom(map) {
     const zoom = map.getZoom();
     console.log(zoom);
@@ -186,9 +189,6 @@ function getMapBounds(map) {
     console.log(bounds);
 }
 
-
-
-/*
 map.on('moveend', function(e) {
     var map = e.target;
     getMapZoom(map);

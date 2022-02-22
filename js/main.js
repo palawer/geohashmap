@@ -1,20 +1,45 @@
 const MAX_GEOHASH_LENGTH = 7;
 
 var map = L.map("map").setView([0, 0], 2);
-L.tileLayer("https://{s}.tile.osm.org/{z}/{x}/{y}.png").addTo(map);
+//L.tileLayer("https://{s}.tile.osm.org/{z}/{x}/{y}.png").addTo(map);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  attribution:
+    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+}).addTo(map);
 
-var geojsonLayer;
-var currentGeohash;
+let geojsonLayer;
+let currentGeohash;
 
-start();
+const $historyBox = document.getElementById("historyBox");
+const $resetButton = document.getElementById("resetButton");
+const $currentLevel = document.getElementById("currentLevel");
+const $currentGeohash = document.getElementById("currentGeohash");
+const $lastGeohash = document.getElementById("lastGeohash");
+const $overGeohash = document.getElementById("overGeohash");
+
+function addGeohashToHistory(geohash) {
+  $lastGeohash.textContent = geohash;
+  $historyBox.textContent = geohash + "\n" + $historyBox.textContent;
+}
+
+$resetButton.onclick = function () {
+  $historyBox.textContent = "";
+};
+
+function renderInfo() {
+  $currentLevel.textContent = currentGeohash.length || "-";
+  $currentGeohash.textContent = currentGeohash || "-";
+}
 
 function start(geohash) {
-  currentGeohash = geohash;
-  console.log(currentGeohash);
+  currentGeohash = geohash || "";
   var geohashes = generateGeohashes(geohash);
   var featureCollection = generateGeojson(geohashes);
   geojsonLayer = loadGeojsonData(featureCollection);
+  renderInfo();
 }
+
+start();
 
 function style(feature) {
   return {
@@ -35,28 +60,37 @@ function onEachFeature(feature, layer) {
 
 function highlightFeature(e) {
   var layer = e.target;
+  const geohash = layer.feature.properties.geohash;
 
-  layer.setStyle({
-    weight: 2,
-    color: "lime",
-  });
+  if (geohash.length >= 7) {
+    layer.setStyle({
+      weight: 3,
+      color: "#007aff",
+    });
+  } else {
+    layer.setStyle({
+      weight: 3,
+      color: "lime",
+    });
+  }
 
   if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
     layer.bringToFront();
   }
 
-  info.update(layer.feature.properties);
+  $overGeohash.textContent = geohash;
 }
 
 function resetHighlight(e) {
   geojsonLayer.resetStyle(e.target);
-  info.update();
+  $overGeohash.textContent = "-";
 }
 
 function clickFeature(e) {
   var geohash = e.target.feature.properties.geohash;
 
   if (geohash.length >= MAX_GEOHASH_LENGTH) {
+    addGeohashToHistory(geohash);
     getNominatimInfo(geohash);
   } else {
     zoomIn(e);
@@ -103,23 +137,6 @@ function loadGeojsonData(featureCollection) {
 
   return geojsonLayer;
 }
-
-var info = L.control();
-
-info.onAdd = function (map) {
-  this._div = L.DomUtil.create("div", "info"); // create a div with a class "info"
-  this.update();
-  return this._div;
-};
-
-// method that we will use to update the control based on feature properties passed
-info.update = function (properties) {
-  this._div.innerHTML =
-    "<h4>Geohash</h4>" +
-    (properties ? "<b>" + properties.geohash + "</b>" : "Hover over a geohash");
-};
-
-info.addTo(map);
 
 // add home button
 var homeControl = L.Control.extend({

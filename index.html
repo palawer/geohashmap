@@ -13,6 +13,59 @@
   </head>
   <body>
     <div id="map"></div>
+    <div id="sidebar">
+      <div class="sidebarBlock">
+        <h3>Info</h3>
+
+        <table class="table">
+          <tr>
+            <td>Level</td>
+            <td class="text-right"><span id="currentLevel">-</span></td>
+          </tr>
+          <tr>
+            <td>Geohash</td>
+            <td class="text-right"><span id="currentGeohash">-</span></td>
+          </tr>
+          <tr>
+            <td>Over</td>
+            <td class="text-right"><span id="overGeohash">-</span></td>
+          </tr>
+          <tr>
+            <td>Last</td>
+            <td class="text-right"><span id="lastGeohash">-</span></td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="sidebarBlock">
+        <h3>History</h3>
+        <div class="text-center">
+          <textarea id="historyBox"></textarea>
+          <button id="resetButton" class="btn">Reset</button>
+        </div>
+      </div>
+
+      <br />
+      <div class="sidebarBlock">
+        <h3>Description</h3>
+        <div>
+          Open the console to see info from the clicked geohash of level 7.
+        </div>
+      </div>
+      <div class="sidebarBlock">
+        <h3>Credits</h3>
+        <div>
+          <a
+            href="https://github.com/palawer/geohashmap"
+            class="link"
+            target="_blank"
+          >
+            github.com/palawer/geohashmap
+          </a>
+        </div>
+      </div>
+    </div>
+
     <script src="js/leaflet/leaflet.js"></script>
     <script src="js/geohash.js"></script>
     <script src="js/utils.js"></script>

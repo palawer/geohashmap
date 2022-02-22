@@ -6,20 +6,20 @@ function combine([head, ...[headTail, ...tailTail]]) {
   return combine([combined, ...tailTail]);
 }
 
-function generateGeohashes(currentGeohash) {
-  currentGeohash = currentGeohash || "";
+function generateGeohashes(geohash) {
+  geohash = geohash || "";
 
   var geohashes = [];
   for (var i = 0; i < base32.length; i++) {
-    geohashes.push(currentGeohash + base32[i]);
+    geohashes.push(geohash + base32[i]);
   }
 
   // add neighbours
-  if (currentGeohash) {
-    var neighbours = Geohash.neighbours(currentGeohash);
+  if (geohash) {
+    var neighbours = Geohash.neighbours(geohash);
     for (var key in neighbours) {
-      var geohash = neighbours[key];
-      geohashes.push(geohash);
+      var neighbour = neighbours[key];
+      geohashes.push(neighbour);
     }
   }
 

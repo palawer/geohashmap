@@ -4,11 +4,14 @@ var map = L.map("map").setView([0, 0], 2);
 L.tileLayer("https://{s}.tile.osm.org/{z}/{x}/{y}.png").addTo(map);
 
 var geojsonLayer;
+var currentGeohash;
 
 start();
 
-function start(currentGeohash) {
-  var geohashes = generateGeohashes(currentGeohash);
+function start(geohash) {
+  currentGeohash = geohash;
+  console.log(currentGeohash);
+  var geohashes = generateGeohashes(geohash);
   var featureCollection = generateGeojson(geohashes);
   geojsonLayer = loadGeojsonData(featureCollection);
 }
@@ -18,6 +21,7 @@ function style(feature) {
     color: "#ff7800",
     weight: 1,
     opacity: 1,
+    fillOpacity: 0.1,
   };
 }
 
@@ -65,7 +69,7 @@ function getNominatimInfo(geohash) {
 
   fetch(url)
     .then((response) => response.json())
-    .then((data) => console.log(data.address))
+    .then((data) => console.log(geohash, data.address))
     .catch((error) => console.log(error));
 }
 
@@ -80,16 +84,16 @@ function zoomIn(e) {
   start(geohash);
 }
 
-/*
-// add world countries
-fetch('./data/world_countries_v7.geojson')
-.then(response => response.json())
-.then(data => {
-L.geoJSON(data, {
-}).addTo(map);
-})
-.catch(error => console.log(error));
-*/
+function zoomOut() {
+  const geohash = currentGeohash.slice(0, -1);
+
+  map.fitBounds(geojsonLayer.getBounds(), {
+    padding: [200, 200],
+  });
+
+  map.removeLayer(geojsonLayer);
+  start(geohash);
+}
 
 function loadGeojsonData(featureCollection) {
   var geojsonLayer = L.geoJSON(featureCollection, {
@@ -116,6 +120,46 @@ info.update = function (properties) {
 };
 
 info.addTo(map);
+
+// add home button
+var homeControl = L.Control.extend({
+  options: {
+    position: "topleft", //topright, bottomleft, bottomright
+  },
+  onAdd: function (map) {
+    var container = L.DomUtil.create(
+      "div",
+      "leaflet-control-zoom leaflet-bar leaflet-control"
+    );
+    var button = L.DomUtil.create(
+      "a",
+      "leaflet-control-zoom-in map-control-home",
+      container
+    );
+    button.href = "#";
+    button.style.lineHeight = "34px";
+    button.text = "^";
+
+    button.onclick = function (e) {
+      e.preventDefault();
+      zoomOut();
+      return false;
+    };
+    return container;
+  },
+});
+map.addControl(new homeControl());
+
+/*
+// add world countries
+fetch('./data/world_countries_v7.geojson')
+.then(response => response.json())
+.then(data => {
+L.geoJSON(data, {
+}).addTo(map);
+})
+.catch(error => console.log(error));
+*/
 
 /*
 function getMapZoom(map) {

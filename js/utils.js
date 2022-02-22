@@ -9,16 +9,15 @@ function combine([head, ...[headTail, ...tailTail]]) {
 function generateGeohashes(geohash) {
   geohash = geohash || "";
 
-  var geohashes = [];
-  for (var i = 0; i < base32.length; i++) {
-    geohashes.push(geohash + base32[i]);
-  }
+  const geohashes = [...base32].map((char) => {
+    return geohash + char;
+  });
 
   // add neighbours
   if (geohash) {
-    var neighbours = Geohash.neighbours(geohash);
-    for (var key in neighbours) {
-      var neighbour = neighbours[key];
+    const neighbours = Geohash.neighbours(geohash);
+    for (const key in neighbours) {
+      const neighbour = neighbours[key];
       geohashes.push(neighbour);
     }
   }
@@ -27,27 +26,26 @@ function generateGeohashes(geohash) {
 }
 
 function generateGeojson(geohashes) {
-  polygons = {};
-  for (var i = 0; i < geohashes.length; i++) {
-    var gh = geohashes[i];
-    var bounds = Geohash.bounds(gh);
-    var polygon = geohashToPolygon(bounds);
-    polygons[gh] = polygon;
+  let polygons = {};
+  for (const geohash of geohashes) {
+    const bounds = Geohash.bounds(geohash);
+    const polygon = geohashToPolygon(bounds);
+    polygons[geohash] = polygon;
   }
 
-  var features = [];
-  for (var key in polygons) {
-    var polygon = polygons[key];
+  let features = [];
+  for (const geohash in polygons) {
+    const polygon = polygons[geohash];
     features.push({
       type: "Feature",
       properties: {
-        geohash: key,
+        geohash: geohash,
       },
       geometry: polygon,
     });
   }
 
-  var featureCollection = {
+  const featureCollection = {
     type: "FeatureCollection",
     features: features,
   };
@@ -56,7 +54,7 @@ function generateGeojson(geohashes) {
 }
 
 function geohashToPolygon(bounds) {
-  polygon = {
+  const polygon = {
     type: "Polygon",
     coordinates: [
       [
@@ -69,4 +67,14 @@ function geohashToPolygon(bounds) {
     ],
   };
   return polygon;
+}
+
+function getNominatimInfo(geohash) {
+  const { lat, lon } = Geohash.decode(geohash);
+  const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14&addressdetails=1`;
+
+  fetch(url)
+    .then((response) => response.json())
+    .then((data) => console.log(geohash, data.address))
+    .catch((error) => console.log(error));
 }

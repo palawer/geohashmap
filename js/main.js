@@ -1,12 +1,15 @@
 "use strict";
 
-const MAX_GEOHASH_LENGTH = 7;
+const MAX_GEOHASH_LENGTH = 9;
 const BOUNDS_PADDING = 200;
 
-const map = L.map("map").setView([0, 0], 2);
+const map = L.map("map", {
+  scrollWheelZoom: false,
+  doubleClickZoom: false,
+}).setView([0, 0], 2);
+
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  attribution:
-    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
 }).addTo(map);
 
 let geojsonLayer;
@@ -14,14 +17,17 @@ let currentGeohash;
 
 const $historyBox = document.getElementById("historyBox");
 const $resetButton = document.getElementById("resetButton");
+const $goToForm = document.getElementById("goToForm");
+const $goToInput = document.getElementById("goToInput");
+const $goToButton = document.getElementById("goToButton");
 const $currentLevel = document.getElementById("currentLevel");
 const $currentGeohash = document.getElementById("currentGeohash");
-const $lastGeohash = document.getElementById("lastGeohash");
 const $overGeohash = document.getElementById("overGeohash");
 
 const addGeohashToHistory = (geohash) => {
-  $lastGeohash.textContent = geohash;
-  $historyBox.textContent = geohash + "\n" + $historyBox.textContent;
+  if (geohash) {
+    $historyBox.textContent = geohash + "\n" + $historyBox.textContent;
+  }
 };
 
 $resetButton.onclick = () => {
@@ -54,17 +60,10 @@ const highlightFeature = (e) => {
   const layer = e.target;
   const geohash = layer.feature.properties.geohash;
 
-  if (geohash.length >= MAX_GEOHASH_LENGTH) {
-    layer.setStyle({
-      weight: 3,
-      color: "#007aff",
-    });
-  } else {
-    layer.setStyle({
-      weight: 3,
-      color: "lime",
-    });
-  }
+  layer.setStyle({
+    weight: 3,
+    color: "lime",
+  });
 
   if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
     layer.bringToFront();
@@ -80,55 +79,68 @@ const resetHighlight = (e) => {
 
 const clickFeature = (e) => {
   const geohash = e.target.feature.properties.geohash;
-
-  if (geohash.length >= MAX_GEOHASH_LENGTH) {
-    addGeohashToHistory(geohash);
-    getNominatimInfo(geohash);
-  } else {
+  if (geohash.length <= MAX_GEOHASH_LENGTH) {
     zoomIn(e);
   }
 };
 
 const zoomIn = (e) => {
   const geohash = e.target.feature.properties.geohash;
-
-  map.fitBounds(e.target.getBounds(), {
-    padding: [BOUNDS_PADDING, BOUNDS_PADDING],
-  });
-
-  map.removeLayer(geojsonLayer);
   start(geohash);
 };
 
 const zoomOut = () => {
   const geohash = currentGeohash.slice(0, -1);
-
-  map.fitBounds(geojsonLayer.getBounds(), {
-    padding: [BOUNDS_PADDING, BOUNDS_PADDING],
-  });
-
-  map.removeLayer(geojsonLayer);
   start(geohash);
 };
 
 const loadGeojsonData = (featureCollection) => {
-  const geojsonLayer = L.geoJSON(featureCollection, {
+  if (geojsonLayer) {
+    map.removeLayer(geojsonLayer);
+  }
+  
+  geojsonLayer = L.geoJSON(featureCollection, {
     style: featureStyle,
     onEachFeature: onEachFeature,
   }).addTo(map);
-
-  return geojsonLayer;
+  
+  /*map.fitBounds(geojsonLayer.getBounds(), {
+    padding: [BOUNDS_PADDING, BOUNDS_PADDING],
+  });*/
+  map.fitBounds(geojsonLayer.getBounds());
 };
 
 const start = (geohash) => {
   currentGeohash = geohash || "";
-  const geohashes = generateGeohashes(geohash);
+  
+  const stopPopulating = currentGeohash.length >= MAX_GEOHASH_LENGTH;
+  const geohashes = generateGeohashes(geohash, stopPopulating);
   const featureCollection = generateGeojson(geohashes);
-  geojsonLayer = loadGeojsonData(featureCollection);
+  
+  loadGeojsonData(featureCollection);
+  addGeohashToHistory(geohash);
   renderInfo();
 };
 
+$goToForm.onsubmit = (e) => {
+  e.preventDefault();
+  
+  const geohash = $goToInput.value;
+  $goToInput.classList.remove('invalidInput');
+  
+  try {
+    const bounds = Geohash.bounds(geohash);
+    start(geohash);
+  } catch (e) {
+    console.log('Invalid geohash');
+    $goToInput.classList.add('invalidInput');
+  }
+  
+  return false;
+};
+
 start();
+$goToInput.focus();
 
 // add home button
 const homeControl = L.Control.extend({

@@ -19,24 +19,30 @@
 
         <table class="table">
           <tr>
-            <td>Level</td>
+            <td>Current level</td>
             <td class="text-right"><span id="currentLevel">-</span></td>
           </tr>
           <tr>
-            <td>Geohash</td>
+            <td>Current geohash</td>
             <td class="text-right"><span id="currentGeohash">-</span></td>
           </tr>
           <tr>
-            <td>Over</td>
+            <td>Highlighted</td>
             <td class="text-right"><span id="overGeohash">-</span></td>
-          </tr>
-          <tr>
-            <td>Last</td>
-            <td class="text-right"><span id="lastGeohash">-</span></td>
           </tr>
         </table>
       </div>
-
+      
+      <div class="sidebarBlock">
+        <h3>Go to</h3>
+        <div class="text-center">
+          <form id="goToForm" autocomplete="off">
+            <input id="goToInput" maxlength="9" autocomplete="off" />
+            <button id="goToButton" class="btn">Go!</button>
+          </form>
+        </div>
+      </div>
+      
       <div class="sidebarBlock">
         <h3>History</h3>
         <div class="text-center">
@@ -44,14 +50,9 @@
           <button id="resetButton" class="btn">Reset</button>
         </div>
       </div>
-
+      
       <br />
-      <div class="sidebarBlock">
-        <h3>Description</h3>
-        <div>
-          Open the console to see info from the clicked geohash of level 7.
-        </div>
-      </div>
+      
       <div class="sidebarBlock">
         <h3>Credits</h3>
         <div>

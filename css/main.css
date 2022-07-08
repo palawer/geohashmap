@@ -23,7 +23,7 @@ body {
 }
 
 a {
-  color: #007aff;
+  color: #0071e3;
 }
 
 .link {
@@ -64,15 +64,37 @@ a {
   background-color: #fafafa;
 }
 
+#goToInput {
+  width: 100%;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  outline: none;
+  padding: 3px;
+  margin: 0 0 10px;
+  background-color: #fafafa;
+}
+
+#goToInput.invalidInput,
+#goToInput.invalidInput:focus {
+  border-color: red;
+}
+#goToInput:focus {
+  border-color: #0071e3;
+}
+
 .btn {
-  background-color: #007aff;
+  background-color: #0071e3;
   border: none;
   padding: 6px 12px;
   border-radius: 4px;
   color: #fff;
+  cursor: pointer;
+}
+.btn:hover {
+  background: #0077EF;
 }
 .btn:active {
-  opacity: 0.6;
+  background: #006edb;
 }
 
 .text-left {

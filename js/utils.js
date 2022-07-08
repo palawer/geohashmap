@@ -6,22 +6,28 @@ function combine([head, ...[headTail, ...tailTail]]) {
   return combine([combined, ...tailTail]);
 }
 
-function generateGeohashes(geohash) {
+function generateGeohashes(geohash, stopPopulating) {
   geohash = geohash || "";
-
-  const geohashes = [...base32].map((char) => {
+  
+  let geohashes = [...base32].map((char) => {
     return geohash + char;
   });
-
-  // add neighbours
+  
   if (geohash) {
+    // stop generating sub-geohashes
+    if (stopPopulating) {
+      geohashes = [geohash];
+    }
+    
+    // add neighbours
     const neighbours = Geohash.neighbours(geohash);
+    
     for (const key in neighbours) {
       const neighbour = neighbours[key];
       geohashes.push(neighbour);
     }
   }
-
+  
   return geohashes;
 }
 
@@ -49,7 +55,7 @@ function generateGeojson(geohashes) {
     type: "FeatureCollection",
     features: features,
   };
-
+  
   return featureCollection;
 }
 
